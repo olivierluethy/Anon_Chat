@@ -21,6 +21,7 @@
   <input type="text" id="message-input" placeholder="Type your message" />
   <button id="send-button" disabled>Send</button>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
   <script>
     // Function to display a message in the chat area
     function displayMessage(message) {
@@ -29,24 +30,27 @@
       chatArea.scrollTop = chatArea.scrollHeight;
     }
 
+    // Establish a WebSocket connection
+    var socket = io();
+
+    // Event listener for 'chat-link-generated' event
+    socket.on("chat-link-generated", function(data) {
+      var chatLink = window.location.origin + data.chat_link;
+      displayMessage("Share this chat link with your friend: <a href='" + chatLink + "'>" + chatLink + "</a>");
+
+      document.getElementById("send-button").removeAttribute("disabled");
+      document.getElementById("generate-button").setAttribute("disabled", "true");
+    });
+
+    // Event listener for 'message' event
+    socket.on("message", function(data) {
+      displayMessage("Friend: " + data.message);
+    });
+
     // Generate a random chat link
     function generateChatLink() {
-      // Replace 'your-api-endpoint' with your actual API endpoint to handle chat link generation
-      var apiUrl = "http://localhost:3000/generate-chat-link";
-
-      // Fetch the chat link from the API endpoint
-      fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            var chatLink = window.location.origin + data.chat_link;
-displayMessage("Share this chat link with your friend: <a href='" + chatLink + "'>" + chatLink + "</a>");
-
-          document.getElementById("send-button").removeAttribute("disabled");
-          document.getElementById("generate-button").setAttribute("disabled", "true");
-        })
-        .catch(error => {
-          console.error(error);
-        });
+      // Emit 'generate-chat-link' event to the server
+      socket.emit("generate-chat-link");
     }
 
     // Function to send a message
@@ -54,37 +58,11 @@ displayMessage("Share this chat link with your friend: <a href='" + chatLink + "
       var messageInput = document.getElementById("message-input");
       var message = messageInput.value;
       if (message.trim() !== "") {
-        // Replace 'your-api-endpoint' with your actual API endpoint to handle message sending
-        var apiUrl = "http://localhost:3000/send-message";
+        // Emit 'send-message' event to the server
+        socket.emit("send-message", { message: message });
 
-        // Replace 'your-chat-link' with the actual chat link received from the friend
-        var chatLink = "your-chat-link";
-
-        // Construct the payload
-        var payload = {
-          chat_link: chatLink,
-          message: message
-        };
-
-        // Send the message to the API endpoint
-        fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        })
-          .then(response => {
-            if (response.ok) {
-              displayMessage("You: " + message);
-              messageInput.value = "";
-            } else {
-              throw new Error("Error sending message");
-            }
-          })
-          .catch(error => {
-            console.error(error);
-          });
+        displayMessage("You: " + message);
+        messageInput.value = "";
       }
     }
 

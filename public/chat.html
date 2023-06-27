@@ -19,6 +19,8 @@
   <input type="text" id="message-input" placeholder="Type your message" />
   <button id="send-button" disabled>Send</button>
 
+
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     // Function to display a message in the chat area
     function displayMessage(message) {
@@ -74,6 +76,22 @@
       var sendButton = document.getElementById("send-button");
       sendButton.disabled = this.value.trim() === "";
     });
+
+    // Establish WebSocket connection
+    const socket = io();
+
+    // Join the appropriate chat room based on the chat link
+    var chatLink = window.location.pathname;
+    socket.emit("join-room", chatLink);
+
+    // Event listener for incoming messages
+socket.on("message", function(data) {
+  // Check if the message is not from the same client
+  if (data.sender !== socket.id) {
+    displayMessage("Friend: " + data.message);
+  }
+});
+
   </script>
 </body>
 </html>
