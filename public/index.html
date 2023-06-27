@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Anonymous Chat</title>
+  <style>
+    #chat-area {
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Anonymous Chat</h1>
+
+  <button id="generate-button">Generate New Chat</button>
+
+  <div id="chat-area"></div>
+
+  <input type="text" id="message-input" placeholder="Type your message" />
+  <button id="send-button" disabled>Send</button>
+
+  <script>
+    // Function to display a message in the chat area
+    function displayMessage(message) {
+      var chatArea = document.getElementById("chat-area");
+      chatArea.innerHTML += "<p>" + message + "</p>";
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    // Generate a random chat link
+    function generateChatLink() {
+      // Replace 'your-api-endpoint' with your actual API endpoint to handle chat link generation
+      var apiUrl = "http://localhost:3000/generate-chat-link";
+
+      // Fetch the chat link from the API endpoint
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            var chatLink = window.location.origin + data.chat_link;
+displayMessage("Share this chat link with your friend: <a href='" + chatLink + "'>" + chatLink + "</a>");
+
+          document.getElementById("send-button").removeAttribute("disabled");
+          document.getElementById("generate-button").setAttribute("disabled", "true");
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    }
+
+    // Function to send a message
+    function sendMessage() {
+      var messageInput = document.getElementById("message-input");
+      var message = messageInput.value;
+      if (message.trim() !== "") {
+        // Replace 'your-api-endpoint' with your actual API endpoint to handle message sending
+        var apiUrl = "http://localhost:3000/send-message";
+
+        // Replace 'your-chat-link' with the actual chat link received from the friend
+        var chatLink = "your-chat-link";
+
+        // Construct the payload
+        var payload = {
+          chat_link: chatLink,
+          message: message
+        };
+
+        // Send the message to the API endpoint
+        fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        })
+          .then(response => {
+            if (response.ok) {
+              displayMessage("You: " + message);
+              messageInput.value = "";
+            } else {
+              throw new Error("Error sending message");
+            }
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      }
+    }
+
+    // Event listener for the send button click
+    document.getElementById("send-button").addEventListener("click", sendMessage);
+
+    // Event listener for the generate button click
+    document.getElementById("generate-button").addEventListener("click", generateChatLink);
+  </script>
+</body>
+</html>
