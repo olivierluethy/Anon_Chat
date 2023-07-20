@@ -1,97 +1,132 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Chat</title>
-  <style>
-    #chat-area {
-      height: 300px;
-      overflow-y: scroll;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h1>Chat</h1>
-
-  <div id="chat-area"></div>
-
-  <input type="text" id="message-input" placeholder="Type your message" />
-  <button id="send-button" disabled>Send</button>
-
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    // Function to display a message in the chat area
-    function displayMessage(message) {
-      var chatArea = document.getElementById("chat-area");
-      chatArea.innerHTML += "<p>" + message + "</p>";
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    // Function to send a message
-    function sendMessage() {
-      var messageInput = document.getElementById("message-input");
-      var message = messageInput.value;
-      if (message.trim() !== "") {
-        // Replace 'your-api-endpoint' with your actual API endpoint to handle message sending
-        var apiUrl = "http://localhost:3000/send-message";
-
-        // Extract the chat link from the current URL
-        var chatLink = window.location.pathname;
-
-        // Construct the payload
-        var payload = {
-          chat_link: chatLink,
-          message: message
-        };
-
-        // Send the message to the API endpoint
-        fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        })
-          .then(response => {
-            if (response.ok) {
-              displayMessage("You: " + message);
-              messageInput.value = "";
-            } else {
-              throw new Error("Error sending message");
-            }
-          })
-          .catch(error => {
-            console.error(error);
-          });
+  <head>
+    <title>Anon Chat - Chat Room</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
       }
-    }
 
-    // Event listener for the send button click
-    document.getElementById("send-button").addEventListener("click", sendMessage);
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
 
-    // Enable the send button when there is text in the message input
-    document.getElementById("message-input").addEventListener("input", function() {
-      var sendButton = document.getElementById("send-button");
-      sendButton.disabled = this.value.trim() === "";
-    });
+      .chat-messages {
+        margin-bottom: 10px;
+      }
 
-    // Establish WebSocket connection
-    const socket = io();
+      .chat-messages ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
 
-    // Join the appropriate chat room based on the chat link
-    var chatLink = window.location.pathname;
-    socket.emit("join-room", chatLink);
+      .chat-messages li {
+        margin-bottom: 5px;
+      }
 
-    // Event listener for incoming messages
-socket.on("message", function(data) {
-  // Check if the message is not from the same client
-  if (data.sender !== socket.id) {
-    displayMessage("Friend: " + data.message);
-  }
-});
+      .chat-form {
+        display: flex;
+      }
 
-  </script>
-</body>
+      .chat-form input[type="text"] {
+        flex: 1;
+        padding: 5px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+
+      .chat-form button {
+        padding: 8px;
+        font-size: 16px;
+        border-radius: 5px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Anon Chat - Chat Room</h1>
+      <div class="chat-messages">
+        <ul id="chatMessages"></ul>
+      </div>
+      <div class="chat-form">
+        <input type="text" id="messageInput" />
+        <button id="sendMessageButton">Send</button>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+
+    <script>
+      const chatMessages = document.getElementById("chatMessages");
+      const messageInput = document.getElementById("messageInput");
+      const sendMessageButton = document.getElementById("sendMessageButton");
+
+      const socket = io();
+
+      // Retrieve the username from the query parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const username = urlParams.get("username");
+
+      // Function to display a message in the chat room
+      function displayMessage(sender, message) {
+        const li = document.createElement("li");
+        li.textContent = `${sender}: ${message}`;
+        chatMessages.appendChild(li);
+      }
+
+      // Event handling for 'chat-history' event
+      socket.on("chat-history", chatHistory => {
+        chatMessages.innerHTML = ""; // Clear existing messages
+
+        // Display chat history
+        chatHistory.forEach(({ senderId, message }) => {
+          displayMessage(senderId, message);
+        });
+      });
+
+      // Event handling for 'message' event
+      socket.on("message", ({ senderId, message }) => {
+        displayMessage(senderId, message);
+      });
+
+      // Event handling for 'connect' event
+      socket.on("connect", () => {
+        // Emit 'join-room' event with the username as the room (chat link)
+        socket.emit("join-room", username);
+      });
+
+      // Event handling for 'disconnect' event
+      socket.on("disconnect", () => {
+        chatMessages.innerHTML = ""; // Clear chat messages on disconnect
+      });
+
+      // Event handling for 'connect_error' event
+      socket.on("connect_error", error => {
+        console.error("WebSocket connection error:", error);
+      });
+
+      // Event handling for sending a message
+      sendMessageButton.addEventListener("click", () => {
+        const message = messageInput.value.trim();
+
+        if (message) {
+          // Emit 'message' event with the message
+          socket.emit("message", { message });
+          messageInput.value = ""; // Clear the input field
+        }
+      });
+    </script>
+  </body>
 </html>

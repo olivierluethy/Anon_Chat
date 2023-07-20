@@ -1,76 +1,88 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Anonymous Chat</title>
-  <style>
-    #chat-area {
-      height: 300px;
-      overflow-y: scroll;
-      border: 1px solid #ccc;
-      padding: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h1>Anonymous Chat</h1>
-
-  <button id="generate-button">Generate New Chat</button>
-
-  <div id="chat-area"></div>
-
-  <input type="text" id="message-input" placeholder="Type your message" />
-  <button id="send-button" disabled>Send</button>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
-  <script>
-    // Function to display a message in the chat area
-    function displayMessage(message) {
-      var chatArea = document.getElementById("chat-area");
-      chatArea.innerHTML += "<p>" + message + "</p>";
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    // Establish a WebSocket connection
-    var socket = io();
-
-    // Event listener for 'chat-link-generated' event
-    socket.on("chat-link-generated", function(data) {
-      var chatLink = window.location.origin + data.chat_link;
-      displayMessage("Share this chat link with your friend: <a href='" + chatLink + "'>" + chatLink + "</a>");
-
-      document.getElementById("send-button").removeAttribute("disabled");
-      document.getElementById("generate-button").setAttribute("disabled", "true");
-    });
-
-    // Event listener for 'message' event
-    socket.on("message", function(data) {
-      displayMessage("Friend: " + data.message);
-    });
-
-    // Generate a random chat link
-    function generateChatLink() {
-      // Emit 'generate-chat-link' event to the server
-      socket.emit("generate-chat-link");
-    }
-
-    // Function to send a message
-    function sendMessage() {
-      var messageInput = document.getElementById("message-input");
-      var message = messageInput.value;
-      if (message.trim() !== "") {
-        // Emit 'send-message' event to the server
-        socket.emit("send-message", { message: message });
-
-        displayMessage("You: " + message);
-        messageInput.value = "";
+  <head>
+    <title>Anon Chat</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
       }
-    }
 
-    // Event listener for the send button click
-    document.getElementById("send-button").addEventListener("click", sendMessage);
+      .container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
 
-    // Event listener for the generate button click
-    document.getElementById("generate-button").addEventListener("click", generateChatLink);
-  </script>
-</body>
+      .input-group {
+        margin-bottom: 10px;
+      }
+
+      .input-group label {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .input-group input {
+        width: 100%;
+        padding: 5px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+
+      .input-group button {
+        width: 100%;
+        padding: 8px;
+        font-size: 16px;
+        border-radius: 5px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+
+      .error-message {
+        color: red;
+        font-size: 14px;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Anon Chat</h1>
+      <div class="input-group">
+        <label for="username">Username:</label>
+        <input type="text" id="username" />
+      </div>
+      <div class="input-group">
+        <button id="startChatButton">Start Chat</button>
+      </div>
+      <div id="errorMessage" class="error-message"></div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const startChatButton = document.getElementById("startChatButton");
+        const usernameInput = document.getElementById("username");
+        const errorMessage = document.getElementById("errorMessage");
+
+        startChatButton.addEventListener("click", () => {
+          const username = usernameInput.value.trim();
+
+          if (username) {
+            errorMessage.textContent = "";
+
+            // Redirect to chat page with the provided username
+            window.location.href = `/chat?username=${encodeURIComponent(username)}`;
+          } else {
+            errorMessage.textContent = "Please enter a username.";
+          }
+        });
+      });
+    </script>
+  </body>
 </html>
