@@ -1,87 +1,295 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Anon Chat</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anon Chat — private rooms that vanish</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      :root {
+        --ink: #14121f;
+        --ink-2: #1e1b2e;
+        --surface: #232035;
+        --hairline: #322c46;
+        --text: #ece8f5;
+        --muted: #9a93b4;
+        --signal: #f5a65b;
+        --signal-soft: rgba(245, 166, 91, 0.14);
+        --violet: #8b7cf6;
+        --danger: #ff6b6b;
+        --radius: 14px;
+      }
+
+      * { box-sizing: border-box; }
+
       body {
-        font-family: Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Inter", system-ui, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(1100px 600px at 50% -10%, rgba(139, 124, 246, 0.16), transparent 60%),
+          radial-gradient(900px 500px at 85% 110%, rgba(245, 166, 91, 0.1), transparent 55%),
+          var(--ink);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 20px;
       }
 
-      .container {
-        max-width: 400px;
-        margin: 0 auto;
-        padding: 20px;
-        box-sizing: border-box;
-        border: 1px solid #ccc;
-        border-radius: 5px;
+      .wordmark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-size: 20px;
+        margin-bottom: 40px;
+      }
+      .signal-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--signal);
+        box-shadow: 0 0 0 0 rgba(245, 166, 91, 0.6);
+        animation: pulse 2.4s infinite;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(245, 166, 91, 0.5); }
+        70% { box-shadow: 0 0 0 12px rgba(245, 166, 91, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 166, 91, 0); }
       }
 
-      .input-group {
-        margin-bottom: 10px;
+      .stage { width: 100%; max-width: 460px; }
+
+      .hero {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: clamp(30px, 7vw, 44px);
+        line-height: 1.04;
+        letter-spacing: -0.03em;
+        margin: 0 0 12px;
+      }
+      .hero .accent { color: var(--signal); }
+      .lede {
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.5;
+        margin: 0 0 32px;
+        max-width: 40ch;
       }
 
-      .input-group label {
+      .field { margin-bottom: 22px; }
+      .label {
         display: block;
-        margin-bottom: 5px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .input {
+        width: 100%;
+        padding: 13px 15px;
+        font-size: 16px;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--ink-2);
+        border: 1px solid var(--hairline);
+        border-radius: var(--radius);
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .input::placeholder { color: #6a648200; color: #6b6588; }
+      .input:focus {
+        outline: none;
+        border-color: var(--violet);
+        box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.22);
       }
 
-      .input-group input {
-        width: 100%;
-        padding: 5px;
-        font-size: 16px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
+      .paths {
+        display: grid;
+        gap: 14px;
+      }
+      .card {
+        background: var(--ink-2);
+        border: 1px solid var(--hairline);
+        border-radius: var(--radius);
+        padding: 18px;
+      }
+      .card h2 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 15px;
+        margin: 0 0 4px;
+      }
+      .card p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.45;
       }
 
-      .input-group button {
+      .btn {
         width: 100%;
-        padding: 8px;
-        font-size: 16px;
-        border-radius: 5px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
+        padding: 13px 16px;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: var(--radius);
+        border: 1px solid transparent;
         cursor: pointer;
+        transition: transform 0.06s, filter 0.15s, background 0.15s;
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary {
+        background: var(--signal);
+        color: #2a1a08;
+      }
+      .btn-primary:hover { filter: brightness(1.06); }
+      .btn-ghost {
+        background: transparent;
+        border-color: var(--hairline);
+        color: var(--text);
+      }
+      .btn-ghost:hover { border-color: var(--violet); }
+
+      .join-row { display: flex; gap: 10px; }
+      .join-row .input {
+        flex: 1;
+        font-family: "JetBrains Mono", monospace;
+        letter-spacing: 0.12em;
+        text-transform: lowercase;
+      }
+      .join-row .btn { width: auto; padding-inline: 20px; }
+
+      .error {
+        color: var(--danger);
+        font-size: 13px;
+        margin-top: 10px;
+        min-height: 18px;
       }
 
-      .error-message {
-        color: red;
-        font-size: 14px;
-        margin-top: 5px;
+      .footnote {
+        margin-top: 28px;
+        color: #6b6588;
+        font-size: 12.5px;
+        line-height: 1.5;
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>Anon Chat</h1>
-      <div class="input-group">
-        <label for="username">Username:</label>
-        <input type="text" id="username" />
+    <div class="stage">
+      <div class="wordmark"><span class="signal-dot"></span> Anon Chat</div>
+
+      <h1 class="hero">Private rooms that <span class="accent">vanish</span> when you leave.</h1>
+      <p class="lede">
+        No accounts, no history. Spin up a room, share the code, and talk. When
+        everyone leaves, the room is gone.
+      </p>
+
+      <div class="field">
+        <label class="label" for="name">Your display name</label>
+        <input class="input" id="name" type="text" maxlength="40" placeholder="Pick any name…" autocomplete="off" />
       </div>
-      <div class="input-group">
-        <button id="startChatButton">Start Chat</button>
+
+      <div class="paths">
+        <div class="card">
+          <h2>Start a new room</h2>
+          <p>Creates a fresh room and drops you inside with a code to share.</p>
+          <button class="btn btn-primary" id="createBtn">Create a room</button>
+        </div>
+
+        <div class="card">
+          <h2>Join a room</h2>
+          <p>Got a code from someone? Enter it to jump into their room.</p>
+          <div class="join-row">
+            <input class="input" id="code" type="text" maxlength="5" placeholder="e.g. 8f3a2" autocomplete="off" />
+            <button class="btn btn-ghost" id="joinBtn">Join</button>
+          </div>
+        </div>
       </div>
-      <div id="errorMessage" class="error-message"></div>
+
+      <div class="error" id="error"></div>
+
+      <p class="footnote">
+        Messages are held in memory only and never written to disk. Rooms and
+        their history disappear the moment they're empty.
+      </p>
     </div>
 
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const startChatButton = document.getElementById("startChatButton");
-        const usernameInput = document.getElementById("username");
-        const errorMessage = document.getElementById("errorMessage");
+      const nameInput = document.getElementById("name");
+      const codeInput = document.getElementById("code");
+      const createBtn = document.getElementById("createBtn");
+      const joinBtn = document.getElementById("joinBtn");
+      const errorEl = document.getElementById("error");
 
-        startChatButton.addEventListener("click", () => {
-          const username = usernameInput.value.trim();
+      // Remember the name across visits so returning users skip retyping.
+      nameInput.value = localStorage.getItem("anon-name") || "";
 
-          if (username) {
-            errorMessage.textContent = "";
+      function showError(msg) {
+        errorEl.textContent = msg;
+      }
 
-            // Redirect to chat page with the provided username
-            window.location.href = `/chat?username=${encodeURIComponent(username)}`;
-          } else {
-            errorMessage.textContent = "Please enter a username.";
-          }
-        });
+      function currentName() {
+        const name = nameInput.value.trim();
+        if (name) localStorage.setItem("anon-name", name);
+        return name;
+      }
+
+      function goToRoom(roomId) {
+        const name = currentName() || "Anonymous";
+        window.location.href = `/chat/${roomId}?name=${encodeURIComponent(name)}`;
+      }
+
+      createBtn.addEventListener("click", async () => {
+        showError("");
+        if (!nameInput.value.trim()) {
+          showError("Enter a display name first.");
+          nameInput.focus();
+          return;
+        }
+        createBtn.disabled = true;
+        try {
+          const res = await fetch("/api/rooms", { method: "POST" });
+          const { roomId } = await res.json();
+          goToRoom(roomId);
+        } catch (e) {
+          showError("Couldn't reach the server. Try again.");
+          createBtn.disabled = false;
+        }
+      });
+
+      joinBtn.addEventListener("click", async () => {
+        showError("");
+        const code = codeInput.value.trim().toLowerCase();
+        if (!nameInput.value.trim()) {
+          showError("Enter a display name first.");
+          nameInput.focus();
+          return;
+        }
+        if (!code) {
+          showError("Enter a room code to join.");
+          codeInput.focus();
+          return;
+        }
+        const res = await fetch(`/api/rooms/${encodeURIComponent(code)}`);
+        if (res.ok) {
+          goToRoom(code);
+        } else {
+          showError("That room doesn't exist. Check the code and try again.");
+        }
+      });
+
+      codeInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") joinBtn.click();
       });
     </script>
   </body>

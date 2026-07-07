@@ -1,131 +1,527 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Anon Chat - Chat Room</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anon Chat — room</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      :root {
+        --ink: #14121f;
+        --ink-2: #1e1b2e;
+        --surface: #232035;
+        --hairline: #322c46;
+        --text: #ece8f5;
+        --muted: #9a93b4;
+        --signal: #f5a65b;
+        --violet: #8b7cf6;
+        --violet-soft: rgba(139, 124, 246, 0.16);
+        --radius: 14px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { height: 100%; }
       body {
-        font-family: Arial, sans-serif;
-      }
-
-      .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-        box-sizing: border-box;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-      }
-
-      .chat-messages {
-        margin-bottom: 10px;
-      }
-
-      .chat-messages ul {
-        list-style-type: none;
-        padding: 0;
         margin: 0;
-      }
-
-      .chat-messages li {
-        margin-bottom: 5px;
-      }
-
-      .chat-form {
+        font-family: "Inter", system-ui, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(900px 500px at 90% -10%, rgba(139, 124, 246, 0.12), transparent 60%),
+          var(--ink);
         display: flex;
+        justify-content: center;
       }
 
-      .chat-form input[type="text"] {
-        flex: 1;
-        padding: 5px;
-        font-size: 16px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
+      .room {
+        width: 100%;
+        max-width: 760px;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        border-inline: 1px solid var(--hairline);
       }
 
-      .chat-form button {
-        padding: 8px;
-        font-size: 16px;
-        border-radius: 5px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
+      /* ---- top bar ---- */
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--hairline);
+        background: rgba(20, 18, 31, 0.7);
+        backdrop-filter: blur(8px);
+      }
+      .back {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 20px;
+        line-height: 1;
+      }
+      .back:hover { color: var(--text); }
+
+      .room-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+      .room-label {
+        font-size: 11px;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .room-code {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: 0.14em;
+        color: var(--signal);
+      }
+
+      .presence {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-left: auto;
+        font-size: 13px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .live-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--signal);
+        animation: pulse 2.4s infinite;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(245, 166, 91, 0.5); }
+        70% { box-shadow: 0 0 0 9px rgba(245, 166, 91, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(245, 166, 91, 0); }
+      }
+
+      .copy-btn {
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        background: transparent;
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        padding: 8px 12px;
         cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+        white-space: nowrap;
+      }
+      .copy-btn:hover { border-color: var(--violet); }
+      .copy-btn.copied { border-color: var(--signal); color: var(--signal); }
+
+      /* ---- search ---- */
+      .searchbar {
+        padding: 10px 18px;
+        border-bottom: 1px solid var(--hairline);
+      }
+      .search-input {
+        width: 100%;
+        padding: 9px 13px;
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--ink-2);
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+      }
+      .search-input:focus {
+        outline: none;
+        border-color: var(--violet);
+      }
+      .search-input::placeholder { color: #6b6588; }
+
+      /* ---- messages ---- */
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .msg { display: flex; flex-direction: column; max-width: 78%; }
+      .msg.you { align-self: flex-end; align-items: flex-end; }
+      .msg .name {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--violet);
+        margin: 0 4px 4px;
+      }
+      .bubble {
+        padding: 10px 14px;
+        border-radius: 16px;
+        font-size: 15px;
+        line-height: 1.45;
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-bottom-left-radius: 5px;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+      }
+      .msg.you .bubble {
+        background: var(--violet);
+        border-color: transparent;
+        color: #fff;
+        border-bottom-left-radius: 16px;
+        border-bottom-right-radius: 5px;
+      }
+      .time {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10.5px;
+        color: var(--muted);
+        margin: 4px 4px 0;
+      }
+      mark {
+        background: rgba(245, 166, 91, 0.35);
+        color: inherit;
+        border-radius: 3px;
+      }
+
+      .system {
+        align-self: center;
+        font-size: 12.5px;
+        color: var(--muted);
+        background: var(--ink-2);
+        border: 1px solid var(--hairline);
+        border-radius: 999px;
+        padding: 4px 12px;
+      }
+
+      .empty {
+        margin: auto;
+        text-align: center;
+        color: var(--muted);
+        max-width: 34ch;
+      }
+      .empty strong {
+        display: block;
+        color: var(--text);
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 17px;
+        margin-bottom: 6px;
+      }
+
+      /* ---- typing indicator ---- */
+      .typing {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 0;
+        overflow: hidden;
+        padding: 0 20px;
+        color: var(--muted);
+        font-size: 13px;
+        opacity: 0;
+        transition: height 0.18s ease, opacity 0.18s ease, padding 0.18s ease;
+      }
+      .typing.active {
+        height: 30px;
+        opacity: 1;
+      }
+      .typing .dots {
+        display: inline-flex;
+        gap: 3px;
+      }
+      .typing .dots span {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--violet);
+        animation: typing-bounce 1.3s infinite ease-in-out;
+      }
+      .typing .dots span:nth-child(2) { animation-delay: 0.18s; }
+      .typing .dots span:nth-child(3) { animation-delay: 0.36s; }
+      @keyframes typing-bounce {
+        0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+        30% { transform: translateY(-4px); opacity: 1; }
+      }
+      .typing .who b { color: var(--text); font-weight: 600; }
+      @media (prefers-reduced-motion: reduce) {
+        .typing .dots span { animation: none; opacity: 0.7; }
+      }
+
+      /* ---- composer ---- */
+      .composer {
+        display: flex;
+        gap: 10px;
+        padding: 14px 18px;
+        border-top: 1px solid var(--hairline);
+        background: rgba(20, 18, 31, 0.7);
+      }
+      .composer input {
+        flex: 1;
+        padding: 13px 15px;
+        font-size: 15px;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--ink-2);
+        border: 1px solid var(--hairline);
+        border-radius: var(--radius);
+      }
+      .composer input:focus {
+        outline: none;
+        border-color: var(--violet);
+        box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.2);
+      }
+      .send {
+        padding: 0 22px;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: inherit;
+        color: #2a1a08;
+        background: var(--signal);
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: filter 0.15s;
+      }
+      .send:hover { filter: brightness(1.06); }
+
+      @media (max-width: 520px) {
+        .room-code { font-size: 16px; }
+        .copy-btn { padding: 8px 10px; }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>Anon Chat - Chat Room</h1>
-      <div class="chat-messages">
-        <ul id="chatMessages"></ul>
+    <div class="room">
+      <div class="topbar">
+        <a class="back" href="/" title="Leave room">‹</a>
+        <div class="room-meta">
+          <span class="room-label">Room code</span>
+          <span class="room-code" id="roomCode">—</span>
+        </div>
+        <button class="copy-btn" id="copyBtn">Copy link</button>
+        <div class="presence">
+          <span class="live-dot"></span><span id="presence">1 here</span>
+        </div>
       </div>
-      <div class="chat-form">
-        <input type="text" id="messageInput" />
-        <button id="sendMessageButton">Send</button>
+
+      <div class="searchbar">
+        <input class="search-input" id="search" type="text" placeholder="Search messages in this room…" autocomplete="off" />
       </div>
+
+      <div class="messages" id="messages">
+        <div class="empty" id="empty">
+          <strong>You're the first one here.</strong>
+          Copy the link and send it to someone to start talking.
+        </div>
+      </div>
+
+      <div class="typing" id="typing" aria-live="polite">
+        <span class="dots"><span></span><span></span><span></span></span>
+        <span class="who" id="typingWho"></span>
+      </div>
+
+      <form class="composer" id="composer">
+        <input id="messageInput" type="text" placeholder="Type a message…" autocomplete="off" maxlength="2000" />
+        <button class="send" type="submit">Send</button>
+      </form>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-
-
     <script>
-      const chatMessages = document.getElementById("chatMessages");
-      const messageInput = document.getElementById("messageInput");
-      const sendMessageButton = document.getElementById("sendMessageButton");
+      // ---- room + identity from the URL ----
+      const roomId = window.location.pathname.split("/").pop();
+      const params = new URLSearchParams(window.location.search);
+      const name = params.get("name") || "Anonymous";
 
-      const socket = io();
+      const messagesEl = document.getElementById("messages");
+      const emptyEl = document.getElementById("empty");
+      const searchEl = document.getElementById("search");
+      const composer = document.getElementById("composer");
+      const input = document.getElementById("messageInput");
 
-      // Retrieve the username from the query parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const username = urlParams.get("username");
+      document.getElementById("roomCode").textContent = roomId;
 
-      // Function to display a message in the chat room
-      function displayMessage(sender, message) {
-        const li = document.createElement("li");
-        li.textContent = `${sender}: ${message}`;
-        chatMessages.appendChild(li);
+      let youId = null;          // this socket's id, set once history arrives
+      let allMessages = [];      // every message we've rendered, for search
+      let filter = "";
+
+      // ---- copy link ----
+      const copyBtn = document.getElementById("copyBtn");
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.origin + "/chat/" + roomId);
+          copyBtn.textContent = "Copied!";
+          copyBtn.classList.add("copied");
+          setTimeout(() => {
+            copyBtn.textContent = "Copy link";
+            copyBtn.classList.remove("copied");
+          }, 1600);
+        } catch (e) {
+          copyBtn.textContent = roomId;
+        }
+      });
+
+      // ---- rendering ----
+      function formatTime(ts) {
+        const d = new Date(ts);
+        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       }
 
-      // Event handling for 'chat-history' event
-      socket.on("chat-history", chatHistory => {
-        chatMessages.innerHTML = ""; // Clear existing messages
+      // Escape then wrap the search term in <mark>. We build HTML from
+      // already-escaped text, so this stays XSS-safe.
+      function escapeHtml(s) {
+        return s.replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+        }[c]));
+      }
+      function highlight(text) {
+        const safe = escapeHtml(text);
+        if (!filter) return safe;
+        const re = new RegExp("(" + filter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
+        return safe.replace(re, "<mark>$1</mark>");
+      }
 
-        // Display chat history
-        chatHistory.forEach(({ senderId, message }) => {
-          displayMessage(senderId, message);
-        });
-      });
+      function matchesFilter(m) {
+        if (!filter) return true;
+        const hay = (m.system ? m.text : m.name + " " + m.text).toLowerCase();
+        return hay.includes(filter);
+      }
 
-      // Event handling for 'message' event
-      socket.on("message", ({ senderId, message }) => {
-        displayMessage(senderId, message);
-      });
+      function render() {
+        messagesEl.querySelectorAll(".msg, .system, .no-results").forEach((n) => n.remove());
 
-      // Event handling for 'connect' event
-      socket.on("connect", () => {
-        // Emit 'join-room' event with the username as the room (chat link)
-        socket.emit("join-room", username);
-      });
+        const visible = allMessages.filter(matchesFilter);
+        emptyEl.style.display = allMessages.length === 0 ? "block" : "none";
 
-      // Event handling for 'disconnect' event
-      socket.on("disconnect", () => {
-        chatMessages.innerHTML = ""; // Clear chat messages on disconnect
-      });
-
-      // Event handling for 'connect_error' event
-      socket.on("connect_error", error => {
-        console.error("WebSocket connection error:", error);
-      });
-
-      // Event handling for sending a message
-      sendMessageButton.addEventListener("click", () => {
-        const message = messageInput.value.trim();
-
-        if (message) {
-          // Emit 'message' event with the message
-          socket.emit("message", { message });
-          messageInput.value = ""; // Clear the input field
+        if (allMessages.length > 0 && visible.length === 0) {
+          const none = document.createElement("div");
+          none.className = "empty no-results";
+          none.innerHTML = "<strong>No matches</strong>Nothing in this room matches your search.";
+          messagesEl.appendChild(none);
+          return;
         }
+
+        for (const m of visible) {
+          if (m.system) {
+            const el = document.createElement("div");
+            el.className = "system";
+            el.innerHTML = highlight(m.text);
+            messagesEl.appendChild(el);
+            continue;
+          }
+          const wrap = document.createElement("div");
+          wrap.className = "msg" + (m.senderId === youId ? " you" : "");
+
+          if (m.senderId !== youId) {
+            const nm = document.createElement("div");
+            nm.className = "name";
+            nm.textContent = m.name;
+            wrap.appendChild(nm);
+          }
+          const bubble = document.createElement("div");
+          bubble.className = "bubble";
+          bubble.innerHTML = highlight(m.text);
+          wrap.appendChild(bubble);
+
+          const t = document.createElement("div");
+          t.className = "time";
+          t.textContent = formatTime(m.ts);
+          wrap.appendChild(t);
+
+          messagesEl.appendChild(wrap);
+        }
+        if (!filter) messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      searchEl.addEventListener("input", () => {
+        filter = searchEl.value.trim().toLowerCase();
+        render();
+      });
+
+      // ---- socket wiring ----
+      const socket = io();
+
+      socket.on("connect", () => {
+        socket.emit("join-room", { roomId, name });
+      });
+
+      socket.on("join-error", ({ message }) => {
+        alert(message);
+        window.location.href = "/";
+      });
+
+      socket.on("chat-history", ({ messages, you }) => {
+        youId = you;
+        allMessages = messages.slice();
+        render();
+      });
+
+      socket.on("message", (m) => {
+        allMessages.push(m);
+        render();
+      });
+
+      socket.on("presence", ({ count }) => {
+        document.getElementById("presence").textContent =
+          count === 1 ? "1 here" : count + " here";
+      });
+
+      // ---- typing indicator: outgoing ----
+      let isTyping = false;
+      let typingTimer = null;
+      const TYPING_IDLE_MS = 2500;
+
+      function setTyping(state) {
+        if (state === isTyping) return;
+        isTyping = state;
+        socket.emit("typing", { isTyping: state });
+      }
+
+      input.addEventListener("input", () => {
+        if (input.value.trim()) {
+          setTyping(true);
+          clearTimeout(typingTimer);
+          typingTimer = setTimeout(() => setTyping(false), TYPING_IDLE_MS);
+        } else {
+          clearTimeout(typingTimer);
+          setTyping(false);
+        }
+      });
+
+      // ---- typing indicator: incoming ----
+      const typingEl = document.getElementById("typing");
+      const typingWho = document.getElementById("typingWho");
+
+      function typingLabel(names) {
+        if (names.length === 1) return `<b>${escapeHtml(names[0])}</b> is typing`;
+        if (names.length === 2)
+          return `<b>${escapeHtml(names[0])}</b> and <b>${escapeHtml(names[1])}</b> are typing`;
+        if (names.length === 3)
+          return `<b>${escapeHtml(names[0])}</b>, <b>${escapeHtml(names[1])}</b> and <b>${escapeHtml(names[2])}</b> are typing`;
+        return "Several people are typing";
+      }
+
+      socket.on("typing", ({ users }) => {
+        // Never show ourselves in the indicator.
+        const names = users.filter((u) => u.id !== youId).map((u) => u.name);
+        if (names.length === 0) {
+          typingEl.classList.remove("active");
+          typingWho.innerHTML = "";
+        } else {
+          typingWho.innerHTML = typingLabel(names);
+          typingEl.classList.add("active");
+        }
+      });
+
+      composer.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        clearTimeout(typingTimer);
+        setTyping(false); // sending clears our typing state immediately
+        socket.emit("message", { text });
+        input.value = "";
       });
     </script>
   </body>
